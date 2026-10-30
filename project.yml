@@ -27,12 +27,31 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: ""
+  WeeklyMealPlannerUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: WeeklyMealPlannerUITests
+    dependencies:
+      - target: WeeklyMealPlanner
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.maxwelltan.WeeklyMealPlannerUITests
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
 schemes:
   WeeklyMealPlanner:
     build:
       targets:
         WeeklyMealPlanner: all
+        WeeklyMealPlannerUITests: [test]
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - WeeklyMealPlannerUITests
     archive:
       config: Release

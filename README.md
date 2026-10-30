@@ -56,7 +56,12 @@ Then choose an iPhone simulator and press Run. The `.xcodeproj` is generated fro
 
 ## Continuous Integration
 
-Every push and pull request to `main` runs [`.github/workflows/ios.yml`](.github/workflows/ios.yml) on a macOS GitHub Actions runner: it installs XcodeGen, generates the Xcode project from `project.yml`, and builds the app for the iOS Simulator (`CODE_SIGNING_ALLOWED=NO`, no provisioning profile needed) to confirm the project compiles.
+Every push and pull request to `main` runs [`.github/workflows/ios.yml`](.github/workflows/ios.yml) on a macOS GitHub Actions runner:
+
+1. Installs XcodeGen and generates the Xcode project from `project.yml`.
+2. Builds the app for the iOS Simulator (`CODE_SIGNING_ALLOWED=NO`, no provisioning profile needed) to confirm the project compiles.
+3. Boots an available iPhone simulator and runs the `WeeklyMealPlannerUITests` UI test ([`WeeklyMealPlannerUITests/WeeklyMealPlannerUITests.swift`](WeeklyMealPlannerUITests/WeeklyMealPlannerUITests.swift)), which launches the app and walks through all six screens (Weekly Plan, Shopping List, Add Meal, Recipe List, Recipe Detail, Favorites), attaching a screenshot of each.
+4. Exports those screenshots from the `.xcresult` bundle ([`scripts/export_screenshots.py`](scripts/export_screenshots.py)) and uploads them as a **`simulator-screenshots`** workflow artifact — download it from the run's Summary page under "Artifacts" to get real, up-to-date simulator screenshots of every screen without opening Xcode.
 
 ## Milestone 1 Requirements Checklist
 

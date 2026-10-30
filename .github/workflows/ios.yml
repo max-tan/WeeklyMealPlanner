@@ -31,3 +31,47 @@ jobs:
             -scheme WeeklyMealPlanner \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO
+
+      - name: Pick an available iPhone simulator
+        id: sim
+        run: |
+          DEVICE=$(xcrun simctl list devices available --json | python3 -c '
+          import json, sys
+          data = json.load(sys.stdin)
+          names = []
+          for runtime, devices in data["devices"].items():
+              if "iOS" not in runtime:
+                  continue
+              for d in devices:
+                  if "iPhone" in d["name"]:
+                      names.append(d["name"])
+          print(names[0] if names else "")
+          ')
+          if [ -z "$DEVICE" ]; then
+            echo "No iPhone simulator found on this runner" >&2
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "Using simulator: $DEVICE"
+          echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
+
+      - name: Run UI tests (launches the app and walks all 6 screens)
+        run: |
+          xcodebuild test \
+            -project WeeklyMealPlanner.xcodeproj \
+            -scheme WeeklyMealPlanner \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Export screenshots from test results
+        if: always()
+        run: python3 scripts/export_screenshots.py
+
+      - name: Upload simulator screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulator-screenshots
+          path: UITestScreenshots
+          if-no-files-found: warn
