@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Export screenshot attachments from an .xcresult bundle produced by `xcodebuild test`.
 
-Walks the legacy xcresulttool JSON graph looking for ActionTestAttachment nodes
-(the screenshots attached via XCTAttachment in the UI test) and exports each one
-as a PNG. Safe to run even if the result bundle is missing or has no attachments.
+`xcresulttool get` without --id only returns the shallow top-level summary;
+the actual per-test attachments are reached by following nested Reference
+objects (testsRef -> summaries -> test -> summaryRef -> activitySummaries ->
+attachments). This walks the tree and resolves every Reference it finds, then
+collects any ActionTestAttachment nodes (the screenshots attached via
+XCTAttachment in the UI test) and exports each one as a PNG.
+
+Safe to run even if the result bundle is missing or has no attachments.
 """
 import json
 import os
@@ -14,25 +19,40 @@ RESULT_BUNDLE = "TestResults.xcresult"
 OUTPUT_DIR = "UITestScreenshots"
 
 
-def run_json(args):
+def xcresulttool_get(ref_id=None):
+    args = ["xcrun", "xcresulttool", "get", "--legacy", "--path", RESULT_BUNDLE, "--format", "json"]
+    if ref_id:
+        args += ["--id", ref_id]
     out = subprocess.check_output(args)
     return json.loads(out)
 
 
-def walk(node, attachments):
+def collect(node, attachments, visited):
     if isinstance(node, dict):
         type_name = node.get("_type", {}).get("_name")
+
         if type_name == "ActionTestAttachment":
             name = node.get("name", {}).get("_value", "screenshot")
             payload_id = node.get("payloadRef", {}).get("id", {}).get("_value")
             if payload_id:
                 attachments.append((name, payload_id))
+
+        if type_name == "Reference":
+            ref_id = node.get("id", {}).get("_value")
+            if ref_id and ref_id not in visited:
+                visited.add(ref_id)
+                try:
+                    referenced = xcresulttool_get(ref_id)
+                    collect(referenced, attachments, visited)
+                except subprocess.CalledProcessError as exc:
+                    print(f"Warning: could not resolve reference {ref_id}: {exc}", file=sys.stderr)
+
         for key, value in node.items():
             if key != "_type":
-                walk(value, attachments)
+                collect(value, attachments, visited)
     elif isinstance(node, list):
         for item in node:
-            walk(item, attachments)
+            collect(item, attachments, visited)
 
 
 def main():
@@ -40,10 +60,9 @@ def main():
         print(f"No result bundle at {RESULT_BUNDLE}; nothing to export.")
         return
 
-    root = run_json(["xcrun", "xcresulttool", "get", "--legacy",
-                      "--path", RESULT_BUNDLE, "--format", "json"])
+    root = xcresulttool_get()
     attachments = []
-    walk(root, attachments)
+    collect(root, attachments, visited=set())
 
     if not attachments:
         print("No screenshot attachments found in test results.")

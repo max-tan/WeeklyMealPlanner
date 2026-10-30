@@ -75,3 +75,11 @@ jobs:
           name: simulator-screenshots
           path: UITestScreenshots
           if-no-files-found: warn
+
+      - name: Upload raw test result bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-result-bundle
+          path: TestResults.xcresult
+          if-no-files-found: warn
