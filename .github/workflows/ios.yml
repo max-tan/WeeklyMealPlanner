@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: macos-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -83,3 +85,22 @@ jobs:
           name: test-result-bundle
           path: TestResults.xcresult
           if-no-files-found: warn
+
+      - name: Commit generated Xcode project and screenshots
+        if: github.event_name == 'push'
+        run: |
+          mkdir -p Screenshots
+          if [ -d UITestScreenshots ] && ls UITestScreenshots/*.png >/dev/null 2>&1; then
+            cp UITestScreenshots/*.png Screenshots/
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f WeeklyMealPlanner.xcodeproj Generated Screenshots
+
+          if git diff --cached --quiet; then
+            echo "Generated project and screenshots are already up to date."
+          else
+            git commit -m "Sync generated Xcode project and simulator screenshots [skip ci]"
+            git push
+          fi

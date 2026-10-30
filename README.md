@@ -45,23 +45,25 @@ Main workflow: Home -> Recipe List -> Recipe Detail -> Add Meal -> back to Home.
 
 ## Running the Project
 
-Requires macOS with Xcode 15+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
+Requires macOS with Xcode 15+. The project is committed and ready to open directly:
 
 ```bash
-xcodegen generate
 open WeeklyMealPlanner.xcodeproj
 ```
 
-Then choose an iPhone simulator and press Run. The `.xcodeproj` is generated from [`project.yml`](project.yml) and is not committed to source control — regenerate it any time with `xcodegen generate`.
+Then choose an iPhone simulator and press Run.
+
+The `.xcodeproj` and `Generated/Info.plist` are generated from [`project.yml`](project.yml) using [XcodeGen](https://github.com/yonaskolb/XcodeGen) and kept in sync automatically by CI on every push (see below) — if you change `project.yml` yourself, regenerate locally with `brew install xcodegen && xcodegen generate` before committing. `project.yml` is the source of truth; avoid editing the `.xcodeproj` directly, since the next CI sync will overwrite manual changes.
 
 ## Continuous Integration
 
 Every push and pull request to `main` runs [`.github/workflows/ios.yml`](.github/workflows/ios.yml) on a macOS GitHub Actions runner:
 
-1. Installs XcodeGen and generates the Xcode project from `project.yml`.
+1. Installs XcodeGen and regenerates the Xcode project from `project.yml`.
 2. Builds the app for the iOS Simulator (`CODE_SIGNING_ALLOWED=NO`, no provisioning profile needed) to confirm the project compiles.
 3. Boots an available iPhone simulator and runs the `WeeklyMealPlannerUITests` UI test ([`WeeklyMealPlannerUITests/WeeklyMealPlannerUITests.swift`](WeeklyMealPlannerUITests/WeeklyMealPlannerUITests.swift)), which launches the app and walks through all six screens (Weekly Plan, Shopping List, Add Meal, Recipe List, Recipe Detail, Favorites), attaching a screenshot of each.
-4. Exports those screenshots from the `.xcresult` bundle ([`scripts/export_screenshots.py`](scripts/export_screenshots.py)) and uploads them as a **`simulator-screenshots`** workflow artifact — download it from the run's Summary page under "Artifacts" to get real, up-to-date simulator screenshots of every screen without opening Xcode.
+4. Exports those screenshots from the `.xcresult` bundle ([`scripts/export_screenshots.py`](scripts/export_screenshots.py)) and uploads them as a `simulator-screenshots` workflow artifact.
+5. On a push to `main`, commits the regenerated `.xcodeproj` and the fresh screenshots (into [`Screenshots/`](Screenshots)) straight back into the repo (`[skip ci]`, so it doesn't retrigger the workflow) — so the committed project always opens directly and the screenshots below are always current, with no manual step.
 
 ## Milestone 1 Requirements Checklist
 
@@ -76,11 +78,12 @@ Every push and pull request to `main` runs [`.github/workflows/ios.yml`](.github
 
 ## Screenshots
 
-Add simulator screenshots of each screen to the `Screenshots/` folder and list them here:
+Captured automatically by CI from the iOS Simulator on every push to `main` (see [Continuous Integration](#continuous-integration)) — these are always up to date with the current code.
 
-1. Home / Weekly Plan
-2. Recipe List (also one with a search or cuisine filter active)
-3. Recipe Detail
-4. Add Meal
-5. Shopping List
-6. Favorites
+| Weekly Plan | Recipe List | Recipe Detail |
+|---|---|---|
+| ![Weekly Plan](Screenshots/01-WeeklyPlan.png) | ![Recipe List](Screenshots/02-RecipeList.png) | ![Recipe Detail](Screenshots/03-RecipeDetail.png) |
+
+| Add Meal | Shopping List | Favorites |
+|---|---|---|
+| ![Add Meal](Screenshots/04-AddMeal.png) | ![Shopping List](Screenshots/05-ShoppingList.png) | ![Favorites](Screenshots/06-Favorites.png) |
