@@ -1,0 +1,38 @@
+name: WeeklyMealPlanner
+options:
+  bundleIdPrefix: com.maxwelltan
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+targets:
+  WeeklyMealPlanner:
+    type: application
+    platform: iOS
+    sources:
+      - path: WeeklyMealPlanner
+    info:
+      path: Generated/Info.plist
+      properties:
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: "Default Configuration"
+                UISceneDelegateClassName: "$(PRODUCT_MODULE_NAME).SceneDelegate"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.maxwelltan.WeeklyMealPlanner
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+schemes:
+  WeeklyMealPlanner:
+    build:
+      targets:
+        WeeklyMealPlanner: all
+    run:
+      config: Debug
+    archive:
+      config: Release
