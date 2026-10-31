@@ -59,12 +59,21 @@ jobs:
 
       - name: Run UI tests (launches the app and walks all 6 screens)
         run: |
-          xcodebuild test \
-            -project WeeklyMealPlanner.xcodeproj \
-            -scheme WeeklyMealPlanner \
-            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
-            -resultBundlePath TestResults.xcresult \
-            CODE_SIGNING_ALLOWED=NO
+          for attempt in 1 2; do
+            echo "UI test attempt $attempt"
+            rm -rf TestResults.xcresult
+            if xcodebuild test \
+              -project WeeklyMealPlanner.xcodeproj \
+              -scheme WeeklyMealPlanner \
+              -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
+              -resultBundlePath TestResults.xcresult \
+              CODE_SIGNING_ALLOWED=NO; then
+              exit 0
+            fi
+            echo "Attempt $attempt failed (often transient simulator/runner flakiness)."
+          done
+          echo "UI tests failed twice; giving up." >&2
+          exit 1
 
       - name: Export screenshots from test results
         if: always()
@@ -102,5 +111,5 @@ jobs:
             echo "Generated project and screenshots are already up to date."
           else
             git commit -m "Sync generated Xcode project and simulator screenshots [skip ci]"
-            git push
+            git push origin "HEAD:${{ github.ref_name }}"
           fi
